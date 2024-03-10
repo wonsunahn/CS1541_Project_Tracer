@@ -1,0 +1,3 @@
+*.o
+obj-intel64/
+obj-ia32/
