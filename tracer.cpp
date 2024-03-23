@@ -95,7 +95,6 @@ static VOID RecordMem(VOID* ip, CHAR r, VOID* addr, INT32 size, BOOL isPrefetch)
     if (!isPrefetch) EmitMem(addr, size);
     TraceFile << endl;
 
-    /*
     instruction inst;
     if (r == 'R') {inst.type = ti_LOAD;}
     else if (r == 'W') {inst.type = ti_STORE;}
@@ -104,7 +103,6 @@ static VOID RecordMem(VOID* ip, CHAR r, VOID* addr, INT32 size, BOOL isPrefetch)
     inst.PC = (uintptr_t) ip;
     inst.Addr = (uintptr_t) addr;
     write_trace(inst);
-    */
 }
 
 static VOID* WriteAddr;
