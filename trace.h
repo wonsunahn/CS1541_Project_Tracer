@@ -12,10 +12,10 @@ enum Format {
 };
 
 /* Trace related functions */
-void trace_init();
+void trace_init(const char *trace_file_name, const char *mode);
 void trace_uninit();
 int trace_get_item(instruction **item);
-int write_trace(instruction item, char *fname);
+int write_trace(instruction item);
 char* get_instruction_string(dynamic_inst dinst, Format format);
 
 #endif /* #define TRACE_H */

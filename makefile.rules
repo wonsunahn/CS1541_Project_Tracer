@@ -24,10 +24,10 @@
 TOOL_ROOTS := dcache pinatrace tracer
 
 # This defines all the applications that will be run during the tests.
-APP_ROOTS := 
+APP_ROOTS := array trace_generator trace_reader
 
 # This defines any additional object files that need to be compiled.
-OBJECT_ROOTS := trace
+# OBJECT_ROOTS := trace
 
 # This defines any additional dlls (shared objects), other than the pintools, that need to be compiled.
 DLL_ROOTS :=
@@ -35,5 +35,11 @@ DLL_ROOTS :=
 # This defines any static libraries (archives), that need to be built.
 LIB_ROOTS :=
 
-$(OBJDIR)tracer$(PINTOOL_SUFFIX): $(OBJDIR)tracer$(OBJ_SUFFIX) trace$(OBJ_SUFFIX)
+$(OBJDIR)tracer$(PINTOOL_SUFFIX): $(OBJDIR)tracer$(OBJ_SUFFIX) $(OBJDIR)trace$(OBJ_SUFFIX)
 	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
+
+$(OBJDIR)trace_generator$(EXE_SUFFIX): trace_generator.cpp trace.cpp
+	$(APP_CXX) $(APP_CXXFLAGS) $(COMP_EXE)$@ $^ $(APP_LDFLAGS) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
+
+$(OBJDIR)trace_reader$(EXE_SUFFIX): trace_reader.cpp trace.cpp
+	$(APP_CXX) $(APP_CXXFLAGS) $(COMP_EXE)$@ $^ $(APP_LDFLAGS) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)

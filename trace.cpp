@@ -13,29 +13,17 @@ FILE *trace_fd;
 static int trace_buf_ptr;
 static int trace_buf_end;
 static instruction *trace_buf;
-static FILE *out_fd;
 
-int is_big_endian(void)
+void trace_init(const char *trace_file_name, const char *mode)
 {
-	union {
-		uint32_t i;
-		char c[4];
-	} bint = { 0x01020304 };
+	trace_fd = fopen(trace_file_name, mode);
+	if (trace_fd == NULL) {
+		exit(-1);
+	}
 
-	return bint.c[0] == 1;
-}
-
-uint32_t my_ntohl(uint32_t x)
-{
-	unsigned char *s = (unsigned char *)&x;
-	return (uint32_t)(s[3] << 24 | s[2] << 16 | s[1] << 8 | s[0]);
-}
-
-void trace_init()
-{
 	trace_buf = (instruction *) malloc(sizeof(instruction) * TRACE_BUFSIZE);
 
-	if (!trace_buf) {
+	if (trace_buf == NULL) {
 		exit(-1);
 	}
 
@@ -64,25 +52,14 @@ int trace_get_item(instruction **item)
 	*item = &trace_buf[trace_buf_ptr];	/* read a new trace item for processing */
 	trace_buf_ptr++;
 
-	if (is_big_endian()) {
-		(*item)->PC = my_ntohl((*item)->PC);
-		(*item)->Addr = my_ntohl((*item)->Addr);
-	}
-
 	return 1;
 }
 
-int write_trace(instruction item, char *fname)
+int write_trace(instruction item)
 {
-	out_fd = fopen(fname, "ab");
 	int n_items;
-	if (is_big_endian()) {
-		(&item)->PC = my_ntohl((&item)->PC);
-		(&item)->Addr = my_ntohl((&item)->Addr);
-	}
 
-	n_items = fwrite(&item, sizeof(instruction), 1, out_fd);
-	fclose(out_fd);
+	n_items = fwrite(&item, sizeof(instruction), 1, trace_fd);
 	if (!n_items) return 0;				/* if no more items in the file, we are done */
 
 	return 1;
@@ -123,7 +100,7 @@ char* get_instruction_string(dynamic_inst dinst, Format format)
       name = "JRTYPE";
       break;
     default:
-      assert(0);
+      exit(-1);
   }
   switch(format) {
     case SHORT_FORM:

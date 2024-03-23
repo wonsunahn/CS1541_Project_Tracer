@@ -8,6 +8,7 @@
  */
 
 #include "pin.H"
+#include "trace.h"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -28,7 +29,8 @@ std::ofstream TraceFile;
 /* Commandline Switches */
 /* ===================================================================== */
 
-KNOB< string > KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "pinatrace.out", "specify trace file name");
+KNOB< string > KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "tracer.out", "specify output file name");
+KNOB< string > KnobTraceFile(KNOB_MODE_WRITEONCE, "pintool", "t", "tracer.tr", "specify trace file name");
 KNOB< BOOL > KnobValues(KNOB_MODE_WRITEONCE, "pintool", "values", "1", "Output memory values reads and written");
 
 /* ===================================================================== */
@@ -92,6 +94,17 @@ static VOID RecordMem(VOID* ip, CHAR r, VOID* addr, INT32 size, BOOL isPrefetch)
               << setw(2 + 2 * sizeof(ADDRINT));
     if (!isPrefetch) EmitMem(addr, size);
     TraceFile << endl;
+
+    /*
+    instruction inst;
+    if (r == 'R') {inst.type = ti_LOAD;}
+    else if (r == 'W') {inst.type = ti_STORE;}
+    else {assert(false);}
+
+    inst.PC = (uintptr_t) ip;
+    inst.Addr = (uintptr_t) addr;
+    write_trace(inst);
+    */
 }
 
 static VOID* WriteAddr;
@@ -147,6 +160,7 @@ VOID Fini(INT32 code, VOID* v)
     TraceFile << "#eof" << endl;
 
     TraceFile.close();
+    trace_uninit();
 }
 
 /* ===================================================================== */
@@ -167,6 +181,8 @@ int main(int argc, char* argv[])
     TraceFile.open(KnobOutputFile.Value().c_str());
     TraceFile.write(trace_header.c_str(), trace_header.size());
     TraceFile.setf(ios::showbase);
+
+    trace_init(KnobTraceFile.Value().c_str(), "ab");
 
     INS_AddInstrumentFunction(Instruction, 0);
     PIN_AddFiniFunction(Fini, 0);
