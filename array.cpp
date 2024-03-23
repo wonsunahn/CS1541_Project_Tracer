@@ -3,6 +3,8 @@
 #include <string.h>
 #include <pthread.h>
 
+#include "markers.hpp"
+
 // #define ACCESSES 1000000000
 #define ACCESSES 1000
 
@@ -18,7 +20,7 @@ int items = 0;
 node_t* head = NULL;
 node_t* last = NULL;
 
-void *create(void *unused) {
+void create() {
   head = (node_t *) malloc(sizeof(node_t) * items);
   for(int i=0; i<items; i++) {
     if(i < items - 1)
@@ -26,10 +28,9 @@ void *create(void *unused) {
     else
       head[i].next = NULL;
   }
-  return NULL;
 }
 
-void *run(void *unused) {
+void run() {
   // Now that we have an array, traverse the array over and over again until we've
   // visited `ACCESSES` elements in our array.
   node_t* current = head;
@@ -37,8 +38,10 @@ void *run(void *unused) {
     if(current == NULL) current = head;
     else current = current->next;
   }
+}
 
-  return NULL;
+void destroy() {
+  free(head);
 }
 
 int main(int argc, char** argv) {
@@ -51,10 +54,13 @@ int main(int argc, char** argv) {
   // How many items should we have in the list?
   items = atoi(argv[1]);
 
-  create(NULL);
-  run(NULL);
+  create();
 
-  free(head);
+  __roi_begin__();
+  run();
+  __roi_end__();
+
+  destroy();
 
   return 0;
 }
