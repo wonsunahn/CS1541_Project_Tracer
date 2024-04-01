@@ -1,30 +1,12 @@
-#
-# Copyright (C) 2012-2021 Intel Corporation.
-# SPDX-License-Identifier: MIT
-#
 
-##############################################################
-#
-# This file includes all the test targets as well as all the
-# non-default build rules and test recipes.
-#
-##############################################################
-
-
-##############################################################
-#
-# Test targets
-#
-##############################################################
-
-###### Place all generic definitions here ######
 
 # This defines the tools which will be run during the the tests, and were not already defined in
 # TEST_TOOL_ROOTS.
-TOOL_ROOTS := dcache pinatrace tracer
+TOOL_ROOTS := tracer
 
 # This defines all the applications that will be run during the tests.
-APP_ROOTS := array trace_generator trace_reader
+TRACED_APP_ROOTS := linked-list array
+APP_ROOTS := trace_generator trace_reader $(TRACED_APP_ROOTS)
 
 # This defines any additional object files that need to be compiled.
 # OBJECT_ROOTS := trace
@@ -35,6 +17,8 @@ DLL_ROOTS :=
 # This defines any static libraries (archives), that need to be built.
 LIB_ROOTS :=
 
+###### Place all custom definitions here ######
+
 $(OBJDIR)tracer$(PINTOOL_SUFFIX): $(OBJDIR)tracer$(OBJ_SUFFIX) $(OBJDIR)trace$(OBJ_SUFFIX)
 	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
 
@@ -43,3 +27,26 @@ $(OBJDIR)trace_generator$(EXE_SUFFIX): trace_generator.cpp trace.cpp
 
 $(OBJDIR)trace_reader$(EXE_SUFFIX): trace_reader.cpp trace.cpp
 	$(APP_CXX) $(APP_CXXFLAGS) $(COMP_EXE)$@ $^ $(APP_LDFLAGS) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
+
+APP_ARGS = 1000 2000 3000 4000 5000 6000 7000 8000 9000 10000 11000 12000 13000 14000 15000 16000 17000 18000 19000 20000 21000 22000 23000 24000 25000 26000 27000 28000 29000 30000
+TRACES := $(addsuffix .tr, $(addprefix traces/, $(foreach app,$(TRACED_APP_ROOTS),$(addprefix $(app).,$(APP_ARGS)))))
+TRACE_READS := $(subst traces/,trace_reads/,$(subst .tr,.txt,$(TRACES)))
+
+runs: $(TRACES) $(TRACE_READS)
+
+define run_rules
+traces/$(1).$(2).tr: $(OBJDIR)tracer$(PINTOOL_SUFFIX) $(OBJDIR)$(1)$(EXE_SUFFIX)
+	pin -t $(OBJDIR)tracer$(PINTOOL_SUFFIX) -t traces/$(1).$(2).tr -- $(OBJDIR)$(1)$(EXE_SUFFIX) $(2)
+endef
+
+$(foreach args,$(APP_ARGS),$(foreach app,$(TRACED_APP_ROOTS),$(eval $(call run_rules,$(app),$(args)))))
+
+define read_rules
+trace_reads/$(1).$(2).txt: $(OBJDIR)trace_reader$(EXE_SUFFIX) traces/$(1).$(2).tr
+	$(OBJDIR)trace_reader$(EXE_SUFFIX) traces/$(1).$(2).tr > trace_reads/$(1).$(2).txt
+endef
+
+$(foreach args,$(APP_ARGS),$(foreach app,$(TRACED_APP_ROOTS),$(eval $(call read_rules,$(app),$(args)))))
+
+cleanruns:
+	rm -f obj-ia32/* traces/* trace_reads/*

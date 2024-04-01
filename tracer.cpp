@@ -23,8 +23,6 @@ using std::string;
 /* Global Variables */
 /* ===================================================================== */
 
-std::ofstream TraceFile;
-
 const CHAR * ROI_BEGIN = "__roi_begin__";
 const CHAR * ROI_END = "__roi_end__";
 bool isROI = false;
@@ -33,7 +31,6 @@ bool isROI = false;
 /* Commandline Switches */
 /* ===================================================================== */
 
-KNOB< string > KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "tracer.out", "specify output file name");
 KNOB< string > KnobTraceFile(KNOB_MODE_WRITEONCE, "pintool", "t", "tracer.tr", "specify trace file name");
 KNOB< BOOL > KnobValues(KNOB_MODE_WRITEONCE, "pintool", "values", "1", "Output memory values reads and written");
 
@@ -54,53 +51,10 @@ static INT32 Usage()
     return -1;
 }
 
-static VOID EmitMem(VOID* ea, INT32 size)
-{
-    if (!KnobValues) return;
-
-    switch (size)
-    {
-        case 0:
-            TraceFile << setw(1);
-            break;
-
-        case 1:
-            TraceFile << static_cast< UINT32 >(*static_cast< UINT8* >(ea));
-            break;
-
-        case 2:
-            TraceFile << *static_cast< UINT16* >(ea);
-            break;
-
-        case 4:
-            TraceFile << *static_cast< UINT32* >(ea);
-            break;
-
-        case 8:
-            TraceFile << *static_cast< UINT64* >(ea);
-            break;
-
-        default:
-            TraceFile.unsetf(ios::showbase);
-            TraceFile << setw(1) << "0x";
-            for (INT32 i = 0; i < size; i++)
-            {
-                TraceFile << static_cast< UINT32 >(static_cast< UINT8* >(ea)[i]);
-            }
-            TraceFile.setf(ios::showbase);
-            break;
-    }
-}
-
 static VOID RecordMem(VOID* ip, CHAR r, VOID* addr, INT32 size, BOOL isPrefetch)
 {
     // Return if not in ROI
     if(!isROI) return;
-
-    TraceFile << ip << ": " << r << " " << setw(2 + 2 * sizeof(ADDRINT)) << addr << " " << dec << setw(2) << size << " " << hex
-              << setw(2 + 2 * sizeof(ADDRINT));
-    if (!isPrefetch) EmitMem(addr, size);
-    TraceFile << endl;
 
     instruction inst;
     if (r == 'R') {inst.type = ti_LOAD;}
@@ -195,9 +149,6 @@ VOID Routine(RTN rtn, VOID *v)
 
 VOID Fini(INT32 code, VOID* v)
 {
-    TraceFile << "#eof" << endl;
-
-    TraceFile.close();
     trace_uninit();
 }
 
@@ -218,10 +169,6 @@ int main(int argc, char* argv[])
     {
         return Usage();
     }
-
-    TraceFile.open(KnobOutputFile.Value().c_str());
-    TraceFile.write(trace_header.c_str(), trace_header.size());
-    TraceFile.setf(ios::showbase);
 
     trace_init(KnobTraceFile.Value().c_str(), "wb");
 

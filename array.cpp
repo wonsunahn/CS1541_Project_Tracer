@@ -5,13 +5,12 @@
 
 #include "markers.hpp"
 
-// #define ACCESSES 1000000000
-#define ACCESSES 1000
+#define ACCESSES 100000
 
 // Define a linked list node type with no data
 typedef struct node {
-  struct node* next;    // 8 bytes
-  int data[30];         // 120 bytes
+  struct node* next;    // 4 bytes
+  int data[1];          // 4 bytes
 } node_t;
 
 
@@ -36,7 +35,10 @@ void run() {
   node_t* current = head;
   for(int i=0; i<ACCESSES; i++) {
     if(current == NULL) current = head;
-    else current = current->next;
+    else {
+      current->data[0] = 0;
+      current = current->next;
+    }
   }
 }
 
